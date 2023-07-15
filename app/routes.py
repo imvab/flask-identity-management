@@ -1,7 +1,5 @@
-from flask import Blueprint, redirect, url_for, request, Response, jsonify
-from datetime import datetime
+from flask import Blueprint, request, jsonify
 
-from .extensions import db
 from .models import Identity
 from .utils import handle_request, validate_request, generate_response
 
@@ -11,7 +9,10 @@ main = Blueprint("main", __name__)
 @main.route("/")
 def index():
     identities = Identity.query.all()
-    list_html = [f"<li>{ identity.id }</li>" for identity in identities]
+    list_html = [
+        f"<li>{ identity.id } { identity.email } { identity.phone_number }</li>"
+        for identity in identities
+    ]
     return f"<ul>{''.join(list_html)}</ul>"
 
 
