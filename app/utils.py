@@ -28,6 +28,7 @@ def handle_request(data):
         created_at=datetime.now(),
         updated_at=datetime.now(),
     )
+    primary_id = None
 
     email_exists = email_already_exists(new_identity.email)
     phone_exists = phone_already_exists(new_identity.phone_number)
@@ -42,7 +43,7 @@ def handle_request(data):
     if len(primary_identity_email) > 0 and len(primary_identity_phone) > 0:
         operable = [primary_identity_email[0], primary_identity_phone[0]]
         operable.sort(key=lambda x: x.created_at, reverse=True)
-
+        primary_id = operable[1].id
         Identity.query.filter_by(id=operable[0].id).update(
             dict(
                 link_precedence="secondary",
@@ -50,47 +51,32 @@ def handle_request(data):
                 updated_at=datetime.now(),
             )
         )
-    elif len(primary_identity_phone) > 0:
+    elif len(phone_exists) > 0:
         new_identity.link_precedence = "secondary"
-        new_identity.linked_id = primary_identity_phone[0].id
-
+        new_identity.linked_id = (
+            primary_identity_phone[0].id
+            if len(primary_identity_phone) > 0
+            else phone_exists[0].linked_id
+        )
         add_to_db(new_identity)
-    elif len(primary_identity_email) > 0:
+    elif len(email_exists) > 0:
         new_identity.link_precedence = "secondary"
-        new_identity.linked_id = primary_identity_email[0].id
-
+        new_identity.linked_id = (
+            primary_identity_email[0].id
+            if len(primary_identity_email) > 0
+            else email_exists[0].linked_id
+        )
         add_to_db(new_identity)
     else:
         new_identity.link_precedence = "primary"
         add_to_db(new_identity)
-
+    primary_id = new_identity.linked_id
     db.session.commit()
+    return primary_id
 
 
-def generate_response(data):
-    primary = None
-    if data["phoneNumber"] and data["email"]:
-        primary = (
-            Identity.query.filter(
-                (Identity.email == data["email"])
-                | (Identity.phone_number == data["phoneNumber"])
-            )
-            .filter_by(link_precedence="primary")
-            .first()
-        )
-    elif data["phoneNumber"]:
-        primary = (
-            Identity.query.filter_by(phone_number=data["phoneNumber"])
-            .filter_by(link_precedence="primary")
-            .first()
-        )
-    else:
-        primary = (
-            Identity.query.filter_by(email=data["email"])
-            .filter_by(link_precedence="primary")
-            .first()
-        )
-
+def generate_response(data, primary_id):
+    primary = Identity.query.filter_by(id=primary_id).first()
     secondaries = Identity.query.filter_by(linked_id=primary.id).all()
 
     return primary.serialize(secondaries)

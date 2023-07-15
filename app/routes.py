@@ -20,7 +20,7 @@ def index():
 def create_identity():
     data = request.json
     if validate_request(data):
-        handle_request(data)
-        return jsonify(generate_response(data)), 201
+        primary_id = handle_request(data)
+        return jsonify(generate_response(data, primary_id)), 201
     else:
         return jsonify({"msg": "Invalid Params"}), 400
