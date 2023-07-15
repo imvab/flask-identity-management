@@ -42,16 +42,24 @@ def handle_request(data):
 
     if len(primary_identity_email) > 0 and len(primary_identity_phone) > 0:
         operable = [primary_identity_email[0], primary_identity_phone[0]]
-        operable.sort(key=lambda x: x.created_at, reverse=True)
-        primary_id = operable[1].id
-        Identity.query.filter_by(id=operable[0].id).update(
-            dict(
-                link_precedence="secondary",
-                linked_id=operable[1].id,
-                updated_at=datetime.now(),
+        if operable[0].id == operable[1].id:
+            Identity.query.filter_by(id=operable[0].id).update(
+                dict(
+                    updated_at=datetime.now(),
+                )
             )
-        )
+        else:
+            operable.sort(key=lambda x: x.created_at, reverse=True)
+            primary_id = operable[1].id
+            Identity.query.filter_by(id=operable[0].id).update(
+                dict(
+                    link_precedence="secondary",
+                    linked_id=operable[1].id,
+                    updated_at=datetime.now(),
+                )
+            )
     elif len(phone_exists) > 0:
+        print("Phone Exists")
         new_identity.link_precedence = "secondary"
         new_identity.linked_id = (
             primary_identity_phone[0].id
@@ -60,6 +68,7 @@ def handle_request(data):
         )
         add_to_db(new_identity)
     elif len(email_exists) > 0:
+        print("Phone Exists")
         new_identity.link_precedence = "secondary"
         new_identity.linked_id = (
             primary_identity_email[0].id
@@ -76,7 +85,17 @@ def handle_request(data):
 
 
 def generate_response(data, primary_id):
-    primary = Identity.query.filter_by(id=primary_id).first()
+    if primary_id == None:
+        primary = (
+            Identity.query.filter(
+                (Identity.email == data["email"])
+                | (Identity.phone_number == data["phoneNumber"])
+            )
+            .filter_by(link_precedence="primary")
+            .first()
+        )
+    else:
+        primary = Identity.query.filter_by(id=primary_id).first()
     secondaries = Identity.query.filter_by(linked_id=primary.id).all()
 
     return primary.serialize(secondaries)
