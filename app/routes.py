@@ -3,6 +3,7 @@ from datetime import datetime
 
 from .extensions import db
 from .models import Identity
+from.utils import handle_request
 
 main = Blueprint('main', __name__)
 
@@ -15,13 +16,5 @@ def index():
 @main.route('/identity', methods = ['POST'])
 def create_identity():
     data = request.json
-    new_identity = Identity(
-        phone_number = data['phoneNumber'],
-        email = data['email'],
-        created_at = datetime.now(),
-        updated_at = datetime.now()
-    )
-
-    db.session.add(new_identity)
-    db.session.commit()
+    handle_request(data)
     return "Identity Added"
