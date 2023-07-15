@@ -2,6 +2,8 @@
 
 This repository contains an API for managing user identities, built using Flask framework. It provides various endpoints to handle user-related operations such as user creation, retrieval, updating, and deletion.
 
+API will be accessible at `https://flask-identity-manager.onrender.com/`.
+
 ## Installation
 
 To use this API, you need to have Python and Flask installed on your system.
