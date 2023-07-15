@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, url_for, request
+from flask import Blueprint, redirect, url_for, request, Response
 from datetime import datetime
 
 from .extensions import db
@@ -16,5 +16,8 @@ def index():
 @main.route('/identity', methods = ['POST'])
 def create_identity():
     data = request.json
-    handle_request(data)
-    return "Identity Added"
+    if (validate_request(data)):
+        handle_request(data)
+        return "Identity Added"
+    else:
+        return Response("Request Invalid", status=400)
