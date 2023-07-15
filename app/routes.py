@@ -1,23 +1,25 @@
-from flask import Blueprint, redirect, url_for, request, Response
+from flask import Blueprint, redirect, url_for, request, Response, jsonify
 from datetime import datetime
 
 from .extensions import db
 from .models import Identity
-from.utils import handle_request
+from .utils import handle_request, validate_request, generate_response
 
-main = Blueprint('main', __name__)
+main = Blueprint("main", __name__)
 
-@main.route('/')
+
+@main.route("/")
 def index():
     identities = Identity.query.all()
     list_html = [f"<li>{ identity.id }</li>" for identity in identities]
     return f"<ul>{''.join(list_html)}</ul>"
 
-@main.route('/identity', methods = ['POST'])
+
+@main.route("/identity", methods=["POST"])
 def create_identity():
     data = request.json
-    if (validate_request(data)):
+    if validate_request(data):
         handle_request(data)
-        return "Identity Added"
+        return jsonify(generate_response(data)), 201
     else:
-        return Response("Request Invalid", status=400)
+        return jsonify({"msg": "Invalid Params"}), 400
